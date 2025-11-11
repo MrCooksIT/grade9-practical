@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Aim Trainer - Secret Game!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 50%, #c44569 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 95vw;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        #gameCanvas {
+            border: 4px solid white;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: crosshair;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .controls p {
+            margin: 5px 0;
+        }
+        
+        button {
+            margin: 10px 5px;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .difficulty-btn {
+            background: #2196F3;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+        
+        .difficulty-btn:hover {
+            background: #1976D2;
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
+        }
+        
+        .difficulty-btn.active {
+            background: #ff9800;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.6);
+        }
+        
+        .game-over {
+            display: none;
+            font-size: 1.5rem;
+            color: #ffd93d;
+            margin: 15px 0;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .accuracy-display {
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+        
+        .accuracy-good {
+            color: #4CAF50;
+        }
+        
+        .accuracy-bad {
+            color: #ff6b6b;
+        }
+        
+        .countdown {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ffd93d;
+            text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+        }
+        
+        .easter-egg {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            opacity: 0.6;
+        }
+
+        .high-scores {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+        }
+
+        .high-scores h3 {
+            margin-bottom: 8px;
+            color: #ffd93d;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 AIM TRAINER 🎯</h1>
+        <p class="subtitle">Test your reflexes and accuracy!</p>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">TIME</div>
+                <div class="stat-value countdown" id="timer">30</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">ACCURACY</div>
+                <div class="stat-value" id="accuracy">100%</div>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        
+        <div class="game-over" id="gameOver">
+            <p>TIME'S UP!</p>
+            <p class="accuracy-display" id="finalStats"></p>
+        </div>
+        
+        <div>
+            <button id="startBtn" onclick="startGame()">START GAME</button>
+        </div>
+
+        <div style="margin-top: 10px;">
+            <button class="difficulty-btn active" onclick="setDifficulty('easy')">EASY</button>
+            <button class="difficulty-btn" onclick="setDifficulty('medium')">MEDIUM</button>
+            <button class="difficulty-btn" onclick="setDifficulty('hard')">HARD</button>
+            <button class="difficulty-btn" onclick="setDifficulty('insane')">INSANE</button>
+        </div>
+        
+        <div class="controls">
+            <p><strong>How to Play:</strong></p>
+            <p>🎯 Click the targets as fast as you can!</p>
+            <p>⚡ Smaller targets = More points</p>
+            <p>⏱️ You have 30 seconds - Good luck!</p>
+        </div>
+
+        <div class="high-scores">
+            <h3>🏆 YOUR BEST SCORES 🏆</h3>
+            <div id="highScores">No records yet - play to set one!</div>
+        </div>
+        
+        <p class="easter-egg">Another secret from Mr. Lewis! 🎮</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const accuracyElement = document.getElementById('accuracy');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalStatsElement = document.getElementById('finalStats');
+        const startBtn = document.getElementById('startBtn');
+        const highScoresElement = document.getElementById('highScores');
+        
+        let targets = [];
+        let score = 0;
+        let hits = 0;
+        let misses = 0;
+        let timeLeft = 30;
+        let gameRunning = false;
+        let gameTimer;
+        let spawnTimer;
+        let difficulty = 'easy';
+        
+        const difficultySettings = {
+            easy: { minSize: 40, maxSize: 60, spawnRate: 1200, duration: 2500, points: 10 },
+            medium: { minSize: 30, maxSize: 50, spawnRate: 1000, duration: 2000, points: 15 },
+            hard: { minSize: 20, maxSize: 40, spawnRate: 800, duration: 1500, points: 25 },
+            insane: { minSize: 15, maxSize: 30, spawnRate: 600, duration: 1200, points: 40 }
+        };
+        
+        // Load high scores
+        let highScores = JSON.parse(localStorage.getItem('aimTrainerScores')) || {
+            easy: 0,
+            medium: 0,
+            hard: 0,
+            insane: 0
+        };
+        
+        updateHighScoresDisplay();
+        
+        function setDifficulty(level) {
+            if (gameRunning) return;
+            difficulty = level;
+            
+            // Update button states
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function updateHighScoresDisplay() {
+            highScoresElement.innerHTML = `
+                <p>Easy: ${highScores.easy} | Medium: ${highScores.medium} | Hard: ${highScores.hard} | Insane: ${highScores.insane}</p>
+            `;
+        }
+        
+        canvas.addEventListener('click', handleClick);
+        
+        function handleClick(event) {
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            let hit = false;
+            
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                const distance = Math.sqrt((x - target.x) ** 2 + (y - target.y) ** 2);
+                
+                if (distance < target.size / 2) {
+                    // Hit!
+                    score += target.points;
+                    hits++;
+                    targets.splice(i, 1);
+                    hit = true;
+                    
+                    // Visual feedback
+                    createHitEffect(target.x, target.y);
+                    break;
+                }
+            }
+            
+            if (!hit) {
+                misses++;
+                createMissEffect(x, y);
+            }
+            
+            updateStats();
+        }
+        
+        function createHitEffect(x, y) {
+            // Create a temporary "explosion" effect
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.6)';
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            setTimeout(() => draw(), 100);
+        }
+        
+        function createMissEffect(x, y) {
+            // Create a temporary "X" for miss
+            ctx.strokeStyle = 'rgba(255, 107, 107, 0.6)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - 10, y - 10);
+            ctx.lineTo(x + 10, y + 10);
+            ctx.moveTo(x + 10, y - 10);
+            ctx.lineTo(x - 10, y + 10);
+            ctx.stroke();
+            
+            setTimeout(() => draw(), 100);
+        }
+        
+        function startGame() {
+            if (gameRunning) return;
+            
+            score = 0;
+            hits = 0;
+            misses = 0;
+            timeLeft = 30;
+            targets = [];
+            gameRunning = true;
+            
+            scoreElement.textContent = score;
+            timerElement.textContent = timeLeft;
+            accuracyElement.textContent = '100%';
+            gameOverElement.style.display = 'none';
+            startBtn.textContent = 'PLAYING...';
+            startBtn.disabled = true;
+            
+            // Start timers
+            gameTimer = setInterval(updateTimer, 1000);
+            spawnTarget();
+            spawnTimer = setInterval(spawnTarget, difficultySettings[difficulty].spawnRate);
+        }
+        
+        function spawnTarget() {
+            const settings = difficultySettings[difficulty];
+            const size = Math.random() * (settings.maxSize - settings.minSize) + settings.minSize;
+            const margin = size;
+            
+            const target = {
+                x: Math.random() * (canvas.width - margin * 2) + margin,
+                y: Math.random() * (canvas.height - margin * 2) + margin,
+                size: size,
+                points: Math.round(settings.points * (settings.maxSize / size)), // Smaller = more points
+                createdAt: Date.now(),
+                duration: settings.duration,
+                color: `hsl(${Math.random() * 360}, 70%, 50%)`
+            };
+            
+            targets.push(target);
+            draw();
+        }
+        
+        function updateTimer() {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            
+            // Remove expired targets
+            targets = targets.filter(target => 
+                Date.now() - target.createdAt < target.duration
+            );
+            
+            if (timeLeft <= 0) {
+                endGame();
+            }
+            
+            draw();
+        }
+        
+        function updateStats() {
+            scoreElement.textContent = score;
+            
+            const totalShots = hits + misses;
+            const accuracy = totalShots === 0 ? 100 : Math.round((hits / totalShots) * 100);
+            accuracyElement.textContent = accuracy + '%';
+            
+            // Color code accuracy
+            if (accuracy >= 80) {
+                accuracyElement.className = 'stat-value accuracy-good';
+            } else if (accuracy < 50) {
+                accuracyElement.className = 'stat-value accuracy-bad';
+            } else {
+                accuracyElement.className = 'stat-value';
+            }
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+            
+            // Draw targets
+            targets.forEach(target => {
+                const age = Date.now() - target.createdAt;
+                const lifePercent = 1 - (age / target.duration);
+                
+                // Outer ring (fading)
+                ctx.strokeStyle = target.color;
+                ctx.lineWidth = 4;
+                ctx.globalAlpha = lifePercent * 0.5;
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, target.size / 2 + 5, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Main target
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = target.color;
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, target.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Inner circles
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, target.size / 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, target.size / 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Points label
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('+' + target.points, target.x, target.y - target.size / 2 - 10);
+            });
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearInterval(spawnTimer);
+            
+            const totalShots = hits + misses;
+            const accuracy = totalShots === 0 ? 0 : Math.round((hits / totalShots) * 100);
+            
+            finalStatsElement.innerHTML = `
+                Final Score: <span style="color: #4CAF50;">${score}</span><br>
+                Hits: ${hits} | Misses: ${misses}<br>
+                Accuracy: <span class="${accuracy >= 70 ? 'accuracy-good' : 'accuracy-bad'}">${accuracy}%</span>
+            `;
+            
+            gameOverElement.style.display = 'block';
+            startBtn.textContent = 'PLAY AGAIN';
+            startBtn.disabled = false;
+            
+            // Update high score if beaten
+            if (score > highScores[difficulty]) {
+                highScores[difficulty] = score;
+                localStorage.setItem('aimTrainerScores', JSON.stringify(highScores));
+                updateHighScoresDisplay();
+                
+                finalStatsElement.innerHTML += '<br><span style="color: #ffd93d;">🏆 NEW HIGH SCORE! 🏆</span>';
+            }
+            
+            targets = [];
+            draw();
+        }
+        
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
